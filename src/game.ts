@@ -167,6 +167,12 @@ fireFly.set(new Fly())
 engine.addEntity(fireFly)
 
 
+let pointOfInterest = new Entity()
+pointOfInterest.set(new ConeShape())
+pointOfInterest.set(new Transform({
+  position : path1[3]
+}))
+engine.addEntity(pointOfInterest)
 
 
 
