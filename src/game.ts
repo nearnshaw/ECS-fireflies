@@ -1,3 +1,11 @@
+
+// Distance for fireflies to fly away
+const flyAwayDistance = 5
+
+
+
+const distCheck = flyAwayDistance * flyAwayDistance
+
 // Path to follow
 const point1 = new Vector3(5, 1, 5)
 const point2 = new Vector3(5, 1, 15)
@@ -83,7 +91,7 @@ export class FlyAway {
       if (fly.state === State.OrbitPath) {
    
         let dist = distance(transform.position, camera.position)
-          if ( dist < 16) {
+          if ( dist < distCheck) {
             fly.state = State.GoingToNext
             fly.fraction = 0
           }
@@ -100,14 +108,14 @@ export class FlyAway {
           } else {
             fly.fraction = 0
             fly.state = State.JoiningOrbit       
-            fly.orbit = generateOrbit(templateOrbit, fly.path[fly.pathIndex])                    
+            fly.orbit = generateOrbit(templateOrbit, fly.path[fly.pathIndex+1])                    
           }
        }
        else if (fly.state === State.JoiningOrbit) {
         if (fly.fraction < 1) {
           fly.fraction += dt
           transform.position = Vector3.Lerp(
-            fly.path[fly.pathIndex],
+            fly.path[fly.pathIndex+1],
             fly.orbit[fly.orbitIndex],
             fly.fraction
           )
@@ -188,9 +196,9 @@ function distance(pos1: Vector3, pos2: Vector3): number {
 function generateOrbit(template: Vector3[], center: Vector3){
   let resultArray = []
   for (let i = 0; i < template.length; i++){
-    let newPos = center.add(template[i])
-    let randomVariation = new Vector3(Math.random() * 0.3, Math.random()*2, Math.random()* 0.3)
-    newPos.add(randomVariation)
+    let randomVariation = new Vector3(Math.random() * 0.3, Math.random()*0.3, Math.random()* 0.3)
+    let newPos = center.add(template[i]).add(randomVariation)
+    
     resultArray.push(newPos)
   }
   return resultArray
