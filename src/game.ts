@@ -47,10 +47,14 @@ export class orbit {
 
       if (fly.state === State.OrbitPath || fly.state === State.OrbitTarget) {
         if (fly.fraction < 1) {
-          fly.fraction += dt / 6
+          fly.fraction += dt
+          let nextPos = fly.orbitIndex + 1
+          if (nextPos >= fly.orbit.length) {
+            nextPos = 0
+          }
           transform.position = Vector3.Lerp(
             fly.orbit[fly.orbitIndex],
-            fly.orbit[fly.orbitIndex+1],
+            fly.orbit[nextPos],
             fly.fraction
           )
         } else {
@@ -78,7 +82,7 @@ export class FlyAway {
       if (fly.state === State.OrbitPath) {
    
         let dist = distance(transform.position, camera.position)
-          if ( dist < 25) {
+          if ( dist < 16) {
             fly.state = State.GoingToNext
             fly.fraction = 0
           }
