@@ -1,26 +1,27 @@
 // Path to follow
-const point1 = new Vector3(5, 0, 5)
-const point2 = new Vector3(5, 0, 15)
-const point3 = new Vector3(15, 0, 15)
-const point4 = new Vector3(15, 0, 5)
+const point1 = new Vector3(5, 1, 5)
+const point2 = new Vector3(5, 1, 15)
+const point3 = new Vector3(15, 1, 15)
+const point4 = new Vector3(15, 1, 5)
 
 // Orbit points
-const op1 = new Vector3(-0.7, 0, -0.7)
-const op2 = new Vector3(-0.9, 0, 0)
-const op3 = new Vector3(-0.7, 0, 0.5)
-const op4 = new Vector3(-0.3, 0, 0.7)
-const op5 = new Vector3(0.3, 0, 0.6)
-const op6 = new Vector3(0.9, 0, 0)
-const op7 = new Vector3(0.7, 0, -0.3)
-const op8 = new Vector3(0.2, 0, -0.6)
+const op1 = new Vector3(-0.7, 1, -0.7)
+const op2 = new Vector3(-0.9, 1, 0)
+const op3 = new Vector3(-0.7, 1, 0.5)
+const op4 = new Vector3(-0.3, 1, 0.7)
+const op5 = new Vector3(0.3, 1, 0.6)
+const op6 = new Vector3(0.9, 1, 0)
+const op7 = new Vector3(0.7, 1, -0.3)
+const op8 = new Vector3(0.2, 1, -0.6)
 
 const path1: Vector3[] = [point1, point2, point3, point4]
 
-const orbit1: Vector3[] = [op1, op2, op3, op4, op5 ,op6, op7, op8]
+const templateOrbit: Vector3[] = [op1, op2, op3, op4, op5 ,op6, op7, op8]
 
 export enum State {
  OrbitPath,
  GoingToNext,
+ JoiningOrbit,
  OrbitTarget
 }
 
@@ -28,7 +29,7 @@ export enum State {
 export class Fly {
   state: State = State.OrbitPath
   path: Vector3[] = path1
-  orbit: Vector3[] = orbit1
+  orbit: Vector3[] = generateOrbit(templateOrbit, this.path[0])
   pathIndex: number = 0
   orbitIndex: number = 0
   fraction: number = 0
@@ -47,7 +48,7 @@ export class orbit {
 
       if (fly.state === State.OrbitPath || fly.state === State.OrbitTarget) {
         if (fly.fraction < 1) {
-          fly.fraction += dt
+          fly.fraction += dt * 2
           let nextPos = fly.orbitIndex + 1
           if (nextPos >= fly.orbit.length) {
             nextPos = 0
@@ -87,9 +88,10 @@ export class FlyAway {
             fly.fraction = 0
           }
    
-       } else if (fly.state === State.GoingToNext) {
+       } 
+       else if (fly.state === State.GoingToNext) {
           if (fly.fraction < 1) {
-            fly.fraction += dt / 6
+            fly.fraction += dt
             transform.position = Vector3.Lerp(
               fly.orbit[fly.orbitIndex],
               fly.path[fly.pathIndex+1],
@@ -97,15 +99,31 @@ export class FlyAway {
             )
           } else {
             fly.fraction = 0
-            fly.pathIndex += 1
-            if (fly.pathIndex >= fly.path.length) {
-              fly.state = State.OrbitTarget
-            } 
-            else {
-              fly.state = State.OrbitPath
-            }                     
+            fly.state = State.JoiningOrbit       
+            fly.orbit = generateOrbit(templateOrbit, fly.path[fly.pathIndex])                    
           }
        }
+       else if (fly.state === State.JoiningOrbit) {
+        if (fly.fraction < 1) {
+          fly.fraction += dt
+          transform.position = Vector3.Lerp(
+            fly.path[fly.pathIndex],
+            fly.orbit[fly.orbitIndex],
+            fly.fraction
+          )
+        } else {
+          fly.fraction = 0
+          //fly.orbitIndex +=1
+          fly.pathIndex += 1
+          if (fly.pathIndex >= fly.path.length) {
+            fly.state = State.OrbitTarget
+          } 
+          else {
+            fly.state = State.OrbitPath
+          } 
+
+        }
+      }
     }
   }
 }
@@ -115,7 +133,14 @@ engine.addSystem(new FlyAway())
 // Object that tracks user position and rotation
 const camera = Camera.instance
 
-// Add Gnark
+
+// Create material
+let fireFlyMaterial = new Material()
+fireFlyMaterial.emissiveColor = Color3.Yellow()
+
+
+
+// Add firefly
 let fireFly = new Entity()
 fireFly.set(new Transform({
   position: new Vector3(5, 0, 5),
@@ -124,16 +149,18 @@ fireFly.set(new Transform({
 }))
 fireFly.get(Transform)
 fireFly.set(new PlaneShape())
-fireFly.get(PlaneShape).billboard
-
-// Add animations
-
+fireFly.get(PlaneShape).billboard = 7
+fireFly.set(fireFlyMaterial)
 
 // add a path data component
 fireFly.set(new Fly())
 
-// Add Gnark to engine
+// Add to engine
 engine.addEntity(fireFly)
+
+
+
+
 
 // Add 3D model for scenery
 const castle = new Entity()
@@ -154,4 +181,17 @@ function distance(pos1: Vector3, pos2: Vector3): number {
   const a = pos1.x - pos2.x
   const b = pos1.z - pos2.z
   return a * a + b * b
+}
+
+
+
+function generateOrbit(template: Vector3[], center: Vector3){
+  let resultArray = []
+  for (let i = 0; i < template.length; i++){
+    let newPos = center.add(template[i])
+    let randomVariation = new Vector3(Math.random() * 0.3, Math.random()*2, Math.random()* 0.3)
+    newPos.add(randomVariation)
+    resultArray.push(newPos)
+  }
+  return resultArray
 }
