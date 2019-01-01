@@ -29,7 +29,6 @@ const templateOrbit: Vector3[] = [op1, op2, op3, op4, op5 ,op6, op7, op8]
 export enum State {
  OrbitPath,
  GoingToNext,
- JoiningOrbit,
  OrbitTarget
 }
 
@@ -79,36 +78,21 @@ export class Flying {
           fly.fraction += dt
           transform.position = Vector3.Lerp(
             fly.orbit[fly.orbitIndex],
-            fly.path[fly.pathIndex+1],
+            fly.path[fly.pathIndex+1].add(templateOrbit[0]),
             fly.fraction
           )
         } else {
           fly.fraction = 0
-          fly.state = State.JoiningOrbit       
-          fly.orbit = generateOrbit(templateOrbit, fly.path[fly.pathIndex+1])                    
+          fly.orbitIndex = 0  
+          fly.pathIndex += 1 
+          fly.orbit = generateOrbit(templateOrbit, fly.path[fly.pathIndex])                    
+          if (fly.pathIndex >= fly.path.length) {
+            fly.state = State.OrbitTarget
+          } else {
+            fly.state = State.OrbitPath
+          } 
         }
      }
-     else if (fly.state === State.JoiningOrbit) {
-      if (fly.fraction < 1) {
-        fly.fraction += dt
-        transform.position = Vector3.Lerp(
-          fly.path[fly.pathIndex+1],
-          fly.orbit[fly.orbitIndex],
-          fly.fraction
-        )
-      } else {
-        fly.fraction = 0
-        //fly.orbitIndex +=1
-        fly.pathIndex += 1
-        if (fly.pathIndex >= fly.path.length) {
-          fly.state = State.OrbitTarget
-        } 
-        else {
-          fly.state = State.OrbitPath
-        } 
-
-      }
-    }
     }
   }
 }
@@ -203,7 +187,10 @@ function distance(pos1: Vector3, pos2: Vector3): number {
 function generateOrbit(template: Vector3[], center: Vector3){
   let resultArray = []
   for (let i = 0; i < template.length; i++){
-    let randomVariation = new Vector3(Math.random() * 0.3, Math.random()*0.3, Math.random()* 0.3)
+    let randomVariation = Vector3.Zero()
+    if (i != 0){
+      let randomVariation = new Vector3(Math.random() * 0.3, Math.random()*0.3, Math.random()* 0.3)
+    }   
     let newPos = center.add(template[i]).add(randomVariation)
     
     resultArray.push(newPos)
