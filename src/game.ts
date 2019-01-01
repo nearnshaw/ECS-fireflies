@@ -10,7 +10,7 @@ const distCheck = flyAwayDistance * flyAwayDistance
 const point1 = new Vector3(5, 1, 5)
 const point2 = new Vector3(5, 1, 15)
 const point3 = new Vector3(15, 1, 15)
-const point4 = new Vector3(15, 1, 5)
+const point4 = new Vector3(15, 2, 5)
 
 // Orbit points
 const op1 = new Vector3(-0.7, 1, -0.7)
@@ -48,7 +48,7 @@ const fireflies = engine.getComponentGroup(Fly)
 
 // Walk following the points in the path
 
-export class orbit {
+export class Flying {
   update(dt: number) {
     for (let firefly of fireflies.entities) {
       let transform = firefly.get(Transform)
@@ -74,15 +74,50 @@ export class orbit {
           }
         }
       }
+      else if (fly.state === State.GoingToNext) {
+        if (fly.fraction < 1) {
+          fly.fraction += dt
+          transform.position = Vector3.Lerp(
+            fly.orbit[fly.orbitIndex],
+            fly.path[fly.pathIndex+1],
+            fly.fraction
+          )
+        } else {
+          fly.fraction = 0
+          fly.state = State.JoiningOrbit       
+          fly.orbit = generateOrbit(templateOrbit, fly.path[fly.pathIndex+1])                    
+        }
+     }
+     else if (fly.state === State.JoiningOrbit) {
+      if (fly.fraction < 1) {
+        fly.fraction += dt
+        transform.position = Vector3.Lerp(
+          fly.path[fly.pathIndex+1],
+          fly.orbit[fly.orbitIndex],
+          fly.fraction
+        )
+      } else {
+        fly.fraction = 0
+        //fly.orbitIndex +=1
+        fly.pathIndex += 1
+        if (fly.pathIndex >= fly.path.length) {
+          fly.state = State.OrbitTarget
+        } 
+        else {
+          fly.state = State.OrbitPath
+        } 
+
+      }
+    }
     }
   }
 }
 
-engine.addSystem(new orbit())
+engine.addSystem(new Flying())
 
-// React and stop walking when the user gets close enough
+// React and fly to next point when the user gets close enough
 
-export class FlyAway {
+export class SpookFirefly {
   update(dt: number) {
     for (let firefly of fireflies.entities) {
       let transform = firefly.get(Transform)
@@ -91,52 +126,18 @@ export class FlyAway {
       if (fly.state === State.OrbitPath) {
    
         let dist = distance(transform.position, camera.position)
-          if ( dist < distCheck) {
-            fly.state = State.GoingToNext
-            fly.fraction = 0
-          }
+        if ( dist < distCheck) {
+          fly.state = State.GoingToNext
+          fly.fraction = 0
+        }
    
        } 
-       else if (fly.state === State.GoingToNext) {
-          if (fly.fraction < 1) {
-            fly.fraction += dt
-            transform.position = Vector3.Lerp(
-              fly.orbit[fly.orbitIndex],
-              fly.path[fly.pathIndex+1],
-              fly.fraction
-            )
-          } else {
-            fly.fraction = 0
-            fly.state = State.JoiningOrbit       
-            fly.orbit = generateOrbit(templateOrbit, fly.path[fly.pathIndex+1])                    
-          }
-       }
-       else if (fly.state === State.JoiningOrbit) {
-        if (fly.fraction < 1) {
-          fly.fraction += dt
-          transform.position = Vector3.Lerp(
-            fly.path[fly.pathIndex+1],
-            fly.orbit[fly.orbitIndex],
-            fly.fraction
-          )
-        } else {
-          fly.fraction = 0
-          //fly.orbitIndex +=1
-          fly.pathIndex += 1
-          if (fly.pathIndex >= fly.path.length) {
-            fly.state = State.OrbitTarget
-          } 
-          else {
-            fly.state = State.OrbitPath
-          } 
-
-        }
-      }
+       
     }
   }
 }
 
-engine.addSystem(new FlyAway())
+engine.addSystem(new SpookFirefly())
 
 // Object that tracks user position and rotation
 const camera = Camera.instance
@@ -170,19 +171,19 @@ engine.addEntity(fireFly)
 let pointOfInterest = new Entity()
 pointOfInterest.set(new ConeShape())
 pointOfInterest.set(new Transform({
-  position : path1[3]
+  position : path1[3].add(new Vector3(0,-1,0))
 }))
 engine.addEntity(pointOfInterest)
 
 
 
-// Add 3D model for scenery
-const castle = new Entity()
-castle.add(new GLTFShape('models/Pirate_Ground.gltf'))
-castle.add(new Transform({
-  position: new Vector3(10, 0, 10)
-}))
-engine.addEntity(castle)
+// // Add 3D model for scenery
+// const castle = new Entity()
+// castle.add(new GLTFShape('models/Pirate_Ground.gltf'))
+// castle.add(new Transform({
+//   position: new Vector3(10, 0, 10)
+// }))
+// engine.addEntity(castle)
 
 // Get distance
 /* 
